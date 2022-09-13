@@ -47,12 +47,11 @@ class Field {
     if (_isOpen) {
       return;
     }
+    _isOpen = true;
     if (_mined) {
       _exploded = true;
       throw ExplosionException();
     }
-
-    _isOpen = true;
 
     if (safeNeighborhood) {
       for (var n in neighbors) {
