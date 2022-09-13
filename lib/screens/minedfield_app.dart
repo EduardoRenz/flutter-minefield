@@ -14,12 +14,26 @@ class MinedFieldApp extends StatefulWidget {
 
 class _MinedFieldAppState extends State<MinedFieldApp> {
   bool? _won;
-  final Board _board = Board(lines: 15, columns: 15, bombQuantity: 3);
+  Board? _board;
+
+  Board _getBoard(double width, double height) {
+    if (_board != null) return _board!;
+    int colQuantity = 15;
+    double fieldSize = width / colQuantity;
+    int lineQuantity = (height / fieldSize).floor();
+
+    _board = Board(
+      lines: lineQuantity,
+      columns: colQuantity,
+      bombQuantity: 50,
+    );
+    return _board!;
+  }
 
   void _restart() {
     setState(() {
       _won = null;
-      _board.restart();
+      _board?.restart();
     });
   }
 
@@ -28,13 +42,13 @@ class _MinedFieldAppState extends State<MinedFieldApp> {
     setState(() {
       try {
         field.open();
-        if (_board.solved) {
+        if (_board!.solved) {
           setState(() => _won = true);
         }
       } on ExplosionException {
         setState(() {
           _won = false;
-          _board.revealBombs();
+          _board?.revealBombs();
         });
       }
     });
@@ -45,7 +59,7 @@ class _MinedFieldAppState extends State<MinedFieldApp> {
 
     setState(() => field.switchMarked());
 
-    if (_board.solved) {
+    if (_board!.solved) {
       setState(() => _won = true);
     }
   }
@@ -58,9 +72,9 @@ class _MinedFieldAppState extends State<MinedFieldApp> {
           won: _won,
           onRestart: _restart,
         ),
-        body: Container(
-          child: BoardWidget(
-            board: _board,
+        body: LayoutBuilder(
+          builder: (ctx, constraints) => BoardWidget(
+            board: _getBoard(constraints.maxWidth, constraints.maxHeight),
             onOpen: _open,
             onSwitchMark: _switchMark,
           ),
