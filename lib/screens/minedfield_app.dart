@@ -1,44 +1,68 @@
 import 'package:flutter/material.dart';
-import 'package:minefield/components/field_widget.dart';
+import 'package:minefield/components/board_widget.dart';
 import 'package:minefield/components/result_widget.dart';
+import 'package:minefield/models/board.dart';
+import 'package:minefield/models/explosion_exception.dart';
 import 'package:minefield/models/field.dart';
 
-class MinedFieldApp extends StatelessWidget {
+class MinedFieldApp extends StatefulWidget {
   const MinedFieldApp({super.key});
 
+  @override
+  State<MinedFieldApp> createState() => _MinedFieldAppState();
+}
+
+class _MinedFieldAppState extends State<MinedFieldApp> {
+  bool? _won;
+  final Board _board = Board(lines: 15, columns: 15, bombQuantity: 3);
+
   void _restart() {
-    print('restart');
+    setState(() {
+      _won = null;
+      _board.restart();
+    });
   }
 
   void _open(Field field) {
-    print('open');
+    if (_won != null) return;
+    setState(() {
+      try {
+        field.open();
+        if (_board.solved) {
+          setState(() => _won = true);
+        }
+      } on ExplosionException {
+        setState(() {
+          _won = false;
+          _board.revealBombs();
+        });
+      }
+    });
   }
 
-  void _switchMark(Field field) {}
+  void _switchMark(Field field) {
+    if (_won != null) return;
+
+    setState(() => field.switchMarked());
+
+    if (_board.solved) {
+      setState(() => _won = true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    Field neighbor = Field(line: 1, column: 0);
-    neighbor.mine();
-
-    Field field = Field(line: 0, column: 0);
-    field.addNeighbor(neighbor);
-
-    try {
-      field.switchMarked();
-    } catch (e) {}
-
     return MaterialApp(
       home: Scaffold(
         appBar: ResultWidget(
-          won: true,
+          won: _won,
           onRestart: _restart,
         ),
         body: Container(
-          child: FieldWidget(
-            field: field,
-            onOpen: (field) => _open(field),
-            onSwitchMark: (field) => _switchMark(field),
+          child: BoardWidget(
+            board: _board,
+            onOpen: _open,
+            onSwitchMark: _switchMark,
           ),
         ),
       ),
